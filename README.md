@@ -119,7 +119,6 @@ module "gcp_compute_firewall" {
     google = google.default
   }
 }
-
 ````
 
 
