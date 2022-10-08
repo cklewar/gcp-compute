@@ -24,10 +24,6 @@ variable "gcp_zone" {
   default = "us-east1-b"
 }
 
-variable "gcp_credentials_file_path" {
-  type = string
-}
-
 variable "gcp_project_id" {
   type    = string
 }
@@ -85,7 +81,7 @@ module "gcp_compute_firewall" {
   compute_firewall_allow_rules = [
     {
       protocol = "tcp"
-      port     = ["22"]
+      ports    = ["22"]
     }
   ]
   gcp_compute_firewall_compute_network = module.gcp_network.vpc_network["name"]
@@ -95,4 +91,8 @@ module "gcp_compute_firewall" {
   providers                            = {
     google = google.default
   }
+}
+
+output "gcp_compute_instance" {
+  value = module.gcp_compute_instance.gcp_compute
 }
