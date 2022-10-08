@@ -1,0 +1,208 @@
+name: GCP Compute module
+on: push
+jobs:
+  f5-xc-gcp-compute-module-validate:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository and submodules
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Checkout support repo
+        uses: actions/checkout@v3
+        with:
+          repository: cklewar/f5-xc-cert
+          path: f5-xc-cert
+          token: ${{ secrets.PAT_TOKEN }}
+      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
+      - name: List files in the repository
+        run: |
+          ls -la ${{ github.workspace }}
+      - name: List files in the cert repository
+        run: |
+          ls -la ${{ github.workspace }}/f5-xc-cert
+      - name: Setup environment
+        id: setup_env
+        run: |
+          cp main.tf.example main.tf
+      - name: Setup Terraform
+        id: setup_tf
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+      - name: Terraform fmt
+        id: fmt
+        run: terraform fmt -check
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        env:
+          TF_VAR_ssh_public_key_file: ${{ secrets.SSH_PUBLIC_KEY_FILE }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform init
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate -no-color
+  f5-xc-gcp-compute-module-plan:
+    runs-on: ubuntu-latest
+    needs: [ f5-xc-gcp-compute-module-validate ]
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository and submodules
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Checkout support repo
+        uses: actions/checkout@v3
+        with:
+          repository: cklewar/f5-xc-cert
+          path: f5-xc-cert
+          token: ${{ secrets.PAT_TOKEN }}
+      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
+      - name: List files in the repository
+        run: |
+          ls -la ${{ github.workspace }}
+      - name: List files in the cert repository
+        run: |
+          ls -la ${{ github.workspace }}/f5-xc-cert
+      - name: Setup environment
+        id: setup_env
+        run: |
+          cp main.tf.example main.tf
+      - name: Setup Terraform
+        id: setup_tf
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        env:
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform init
+      - name: Terraform Plan
+        id: plan
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_APPLICATION_CREDENTIALS }}
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform plan -no-color
+        continue-on-error: false
+      - name: Cleanup environment
+        id: cleanup_env
+        run: |
+          rm main.tf
+      - run: echo "This job's status is ${{ job.status }}."
+  f5-xc-gcp-compute-module-apply:
+    runs-on: ubuntu-latest
+    needs: [ f5-xc-gcp-compute-module-plan ]
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository and submodules
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Checkout support repo
+        uses: actions/checkout@v3
+        with:
+          repository: cklewar/f5-xc-cert
+          path: f5-xc-cert
+          token: ${{ secrets.PAT_TOKEN }}
+      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
+      - name: List files in the repository
+        run: |
+          ls -la ${{ github.workspace }}
+      - name: List files in the cert repository
+        run: |
+          ls -la ${{ github.workspace }}/f5-xc-cert
+      - name: Setup environment
+        id: setup_env
+        run: |
+          cp main.tf.example main.tf
+      - name: Setup Terraform
+        id: setup_tf
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        env:
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform init
+      - name: Terraform Apply
+        id: apply
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_APPLICATION_CREDENTIALS }}
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform apply -auto-approve -no-color
+        continue-on-error: false
+      - name: Cleanup environment
+        id: cleanup_env
+        run: |
+          rm main.tf
+      - run: echo "This job's status is ${{ job.status }}."
+  f5-xc-gcp-compute-module-destroy:
+    runs-on: ubuntu-latest
+    needs: [ f5-xc-gcp-compute-module-apply ]
+    steps:
+      - run: echo "The job was automatically triggered by a ${{ github.event_name }} event."
+      - run: echo "This job is now running on a ${{ runner.os }} server hosted by GitHub."
+      - run: echo "The name of your branch is ${{ github.ref }} and your repository is ${{ github.repository }}."
+      - name: Check out repository and submodules
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+          submodules: recursive
+      - name: Checkout support repo
+        uses: actions/checkout@v3
+        with:
+          repository: cklewar/f5-xc-cert
+          path: f5-xc-cert
+          token: ${{ secrets.PAT_TOKEN }}
+      - run: echo "The ${{ github.repository }} repository has been cloned to the runner."
+      - name: List files in the repository
+        run: |
+          ls -la ${{ github.workspace }}
+      - name: List files in the cert repository
+        run: |
+          ls -la ${{ github.workspace }}/f5-xc-cert
+      - name: Setup environment
+        id: setup_env
+        run: |
+          cp main.tf.example main.tf
+      - name: Setup Terraform
+        id: setup_tf
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_wrapper: false
+        continue-on-error: true
+      - name: Terraform Init
+        id: init
+        env:
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform init
+      - name: Terraform Destroy
+        id: destroy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ secrets.GCP_APPLICATION_CREDENTIALS }}
+          TF_VAR_gcp_project_id: ${{ secrets.GCP_PROJECT_ID }}
+          TF_TOKEN_app_terraform_io: ${{ secrets.TF_TOKEN_APP_TERRAFORM_IO }}
+        run: terraform destroy -auto-approve -no-color
+        continue-on-error: false
+      - name: Cleanup environment
+        id: cleanup_env
+        run: |
+          rm main.tf
+      - run: echo "This job's status is ${{ job.status }}."
