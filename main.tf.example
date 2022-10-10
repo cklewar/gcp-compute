@@ -40,7 +40,6 @@ provider "google" {
   alias       = "default"
 }
 
-
 module "gcp_network" {
   source                   = "./modules/gcp/network"
   gcp_compute_network_name = format("%s-network-%s", var.project_prefix, var.project_suffix)
